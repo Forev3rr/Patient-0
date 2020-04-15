@@ -15,6 +15,11 @@ var numWerewolves = 2;
 var acknowledge = false;
 var restart = false;
 
+// phase is in charge of remembering what part of the round we're on
+//      0 = Night Start
+//      1 = 
+var phase = 0;
+
 function getRandom(arr, n) {
     var result = new Array(n),
         len = arr.length,
@@ -143,9 +148,45 @@ function startGame(name) {
     console.log(players[doctor] + " is the Doctor.");
 };
 
+function playGame() {
+    if (!playing) {
+        console.log("Error: There ain't be no game to be played 'round 'ere.");
+        return;
+    }
+    if (preparing) {
+        console.log("Error: You want to play before you start? Do you also put your car into drive before you turn the key?? Fucking weirdo.");
+        return;
+    }
+    switch (phase) {
+        // Werewolf Phase
+        case 0:
+            
+            console.log ("Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*");
+            if (numWerewolves == 2) {
+                var msg1 = players[werewolves[0]] + ": " + players[werewolves[1]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
+                var msg2 = players[werewolves[1]] + ": " + players[werewolves[0]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
+                for (var i = 0; i < numPlayers; i++) {
+                    if (i < 10) 
+                        msg1 += i + "       - " + players[i] + "\n";
+                    else 
+                        msg1 += i + "      - " + players[i] + "\n";
+                }
+                msg1 += "```";
+                msg2 += "```";
+                console.log(msg1);
+                console.log(msg2);
+            }
+            break;        
+        case 1:
+
+        case 2:
+
+    }
+};
+
 function testGame() {
     newGame("P McGee");
     for (var i = 0; i < 7; i++) {
         addPlayer("P " + (i + 2));
     }
-}
+};
