@@ -7,17 +7,10 @@ var preparing = false;
 var playing = false;
 
 
-var seerNotified = false;
 var seer;
-var doctorNotified = false;
 var doctor;
-var werewolvesNotified = false;
 var werewolves = [];
 var numWerewolves = 2;
-
-// acknowledged is used when a comm
-var acknowledge = false;
-var restart = false;
 
 
 var votes = [];
@@ -50,6 +43,11 @@ function resetVars() {
     players = [];
     numWerewolves = 2;
     playing = false;
+    votes = [];
+    voted = 0;
+    dying = null;
+    healing = null;
+    phase = 0;
 };
 
 function addPlayer(id) {
@@ -98,11 +96,6 @@ function removePlayer(name) {
 function newGame(name) {
     if (preparing) {
         console.log ("Error: You're already creating a new game, shithead.");
-        return;
-    }
-    if (playing) {
-        console.log ("Are you sure you want to start a new game?");
-        acknowledge = true;
         return;
     }
     console.log("***" + name + "*** has started a new game of Werewolf.\nTo play, type ***!join***\n\nOnce everyone is in, ***" + name + "*** can type ***!start*** to begin the game");
@@ -250,8 +243,9 @@ function killFolks(player, target) {
     votes[voted] = target;
     voted++;
     if (voted == numWerewolves) {
-        sacrifice();
+        return (sacrifice());
     }
+    return null;
 };
 
 function sacrifice() {
@@ -299,6 +293,7 @@ function sacrifice() {
     dying = pickedPlayers[highestPlayer];
     phase++;
     playGame();
+    return pickedPlayers[highestPlayer];
 };
 
 function seerPhase() {
@@ -315,24 +310,29 @@ function seerPhase() {
 
 function inspectaDeck(seer, target) {
     var found = false;
+    var whatThey;
     if (target == doctor) {
         console.log(players[seer] + ": " + players[target] + " is the doctor.");
         found = true;
+        whatThey = 1;
     }
     else {
         for (var i = 0; i < numWerewolves; i++) {
             if (werewolves[i] == target) {
                 console.log(players[seer] + ": " + players[target] + " is a werewolf.");
                 found = true;
+                whatThey = 0;
                 break;
             }
         }
     }
     if (!found) {
         console.log(players[seer] + ": " + players[target] + " is a villager.");
+        whatThey = 2;
     }
     phase++;
     playGame();
+    return whatThey;
 };
 
 function doctorPhase() {
@@ -364,6 +364,12 @@ function morningPhase() {
     else {
         removePlayer(players[dying]);
     }
+
+    if (numWerewolves >= (numPlayers - numWerewolves)) {
+        console.log("Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...");
+        endGame();
+        return;
+    }
     var msg1 = "Talk amongst yourselves and try to figure out *who* among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n```\n";
     for (var i = 0; i < numPlayers; i++) {
         if (i < 10) 
@@ -380,8 +386,9 @@ function vote(player) {
     votes[voted] = target;
     voted++;
     if (voted == numPlayers) {
-        sacrificeIITurboHDRemix();
+        return(sacrificeIITurboHDRemix());
     }
+    return null;
 };
 
 function sacrificeIITurboHDRemix() {
@@ -390,6 +397,7 @@ function sacrificeIITurboHDRemix() {
     var numPicked = 0;
     var highestVotes = 0;
     var highestPlayer = "";
+    var youAWolf = false;
     for (var i = 0; i < voted; i++) {
         if (i == 0) {
             pickedPlayers[numPicked] = votes[i];
@@ -412,13 +420,16 @@ function sacrificeIITurboHDRemix() {
             }
         }
     }
+    var tied = false;
     for (var i = 0; i < numPicked; i++) {
         if (pickedTimes[i] > highestVotes) {
             highestVotes = pickedTimes[i];
             highestPlayer = i;
+            tied = false;
         }
         else if (pickedTimes[i] == highestVotes) {
             // Flip a coin. If it's heads, we got a new winner.
+            tie = true;
             var who2pick = Math.floor(Math.random()*2);
             if (who2pick == 0) {
                 highestVotes = pickedTimes[i];
@@ -426,8 +437,44 @@ function sacrificeIITurboHDRemix() {
             }
         }
     }
+    if (tied) {
+        console.log("Looks like nobody dies today. Good luck tonight!")
+        votes = [];
+        voted = 0;
+        dying = null;
+        healing = null;
+        phase = 0;
+        playGame();
+        return null;
+    }
+
+    //This only happens if there's no tie
     dying = pickedPlayers[highestPlayer];
+    var found = false;
+    for (var i = 0; i < numWerewolves; i++) {
+        if (werewolves[i] == dying) {
+            killWolf(i);
+            found = true;
+            console.log("Good job! " + players[dying] + " was a werewolf.");
+            youAWolf = true;
+            break;
+        }
+    }
+    if (!found)
+        console.log("Big oof! " + players[dying] + " is not a werewolf.");
+
     removePlayer(players[dying]);
+
+    if (numWerewolves >= (numPlayers - numWerewolves)) {
+        console.log("Well everyone, you tried your best, but it just wasn't good enough.\n**Werewolves win...**");
+        endGame();
+        return;
+    } 
+    else if (numWerewolves == 0) {
+        console.log("Fuck you, werewolves!!!!!\n**Villagers win!**");
+        endGame();
+        return;
+    }
     
     votes = [];
     voted = 0;
@@ -435,6 +482,18 @@ function sacrificeIITurboHDRemix() {
     healing = null;
     phase = 0;
     playGame();
+    return youAWolf;
+};
+
+function killWolf(index) {
+    for (var i = index; i < numWerewolves; i++) {
+        if (i == (numWerewolves - 1)) {
+            werewolves[i] = null;
+        }
+        else
+            werewolves[i] = werewolves[i + 1];
+    }
+    numWerewolves--;
 };
 
 function skipDay() {
@@ -446,6 +505,11 @@ function skipDay() {
     healing = null;
     phase = 0;
     playGame();
+};
+
+function endGame() {
+    preparing = false;
+    resetVars();
 };
 
 function testGame() {
