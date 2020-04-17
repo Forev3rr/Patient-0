@@ -21,6 +21,7 @@ var restart = false;
 
 
 var votes = [];
+var voted = 0;
 var dying = null;
 var healing = null;
 
@@ -254,12 +255,12 @@ function killFolks(player, target) {
 };
 
 function sacrifice() {
-    var pickedPlayers = ["", "", ""];
-    var pickedTimes = [0, 0, 0];
+    var pickedPlayers = [];
+    var pickedTimes = [];
     var numPicked = 0;
     var highestVotes = 0;
     var highestPlayer = "";
-    for (var i = 0; i < numWerewolves; i++) {
+    for (var i = 0; i < voted; i++) {
         if (i == 0) {
             pickedPlayers[numPicked] = votes[i];
             pickedTimes[numPicked]++;
@@ -350,6 +351,100 @@ function doctor(doctor, target) {
     var found = false;
     healing = target;
     phase++;
+    playGame();
+};
+
+function morningPhase() {
+    console.log("Everybody wake up. " + players[dying] + " was killed by the werewolf.");
+    votes = [];
+    voted = 0;
+    if (dying == healing) {
+        console.log("...but luckily the doctor healed them, so there was no life loss!");
+    }
+    else {
+        removePlayer(players[dying]);
+    }
+    var msg1 = "Talk amongst yourselves and try to figure out *who* among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n```\n";
+    for (var i = 0; i < numPlayers; i++) {
+        if (i < 10) 
+            msg1 += i + "       - " + players[i] + "\n";
+        else 
+            msg1 += i + "      - " + players[i] + "\n";
+    }
+    msg1 += "```\n";
+    msg1 += "If you aren't sure who could be a filthy, no good, two-timing werewolf, " + players[0] + " can type !sleep to move to night time.";
+    console.log(msg1);
+};
+
+function vote(player) {
+    votes[voted] = target;
+    voted++;
+    if (voted == numPlayers) {
+        sacrificeIITurboHDRemix();
+    }
+};
+
+function sacrificeIITurboHDRemix() {
+    var pickedPlayers = [];
+    var pickedTimes = [];
+    var numPicked = 0;
+    var highestVotes = 0;
+    var highestPlayer = "";
+    for (var i = 0; i < voted; i++) {
+        if (i == 0) {
+            pickedPlayers[numPicked] = votes[i];
+            pickedTimes[numPicked]++;
+            numPicked++;
+        }
+        else {
+            var found = false;
+            for (var j = 0; j < numPicked; j++) {
+                if (pickPlayers[j] == votes[i]) {
+                    pickedTimes[j]++;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                pickedPlayers[numPicked] = votes[i];
+                pickedTimes[numPicked]++;
+                numPicked++;
+            }
+        }
+    }
+    for (var i = 0; i < numPicked; i++) {
+        if (pickedTimes[i] > highestVotes) {
+            highestVotes = pickedTimes[i];
+            highestPlayer = i;
+        }
+        else if (pickedTimes[i] == highestVotes) {
+            // Flip a coin. If it's heads, we got a new winner.
+            var who2pick = Math.floor(Math.random()*2);
+            if (who2pick == 0) {
+                highestVotes = pickedTimes[i];
+                highestPlayer = i;
+            }
+        }
+    }
+    dying = pickedPlayers[highestPlayer];
+    removePlayer(players[dying]);
+    
+    votes = [];
+    voted = 0;
+    dying = null;
+    healing = null;
+    phase = 0;
+    playGame();
+};
+
+function skipDay() {
+    console.log(players[0] + " skipped the vote, so good luck!");
+    
+    votes = [];
+    voted = 0;
+    dying = null;
+    healing = null;
+    phase = 0;
     playGame();
 };
 
