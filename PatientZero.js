@@ -51,14 +51,14 @@ function resetVars() {
     playing = false;
 };
 
-function addPlayer(name) {
+function addPlayer(id) {
     if (numPlayers >= maxPlayers) {
         console.log("Error: Too many players.");
         return;
     }
-    players[numPlayers] = name;
+    players[numPlayers] = id;
     numPlayers++;
-    console.log(name + " has ***joined***.");
+    console.log(id + " has ***joined***.");
     console.log("That makes " + numPlayers + " players.\n\n")
 };
 
@@ -167,15 +167,21 @@ function playGame() {
         console.log("Error: You want to play before you start? Do you also put your car into drive before you turn the key?? Fucking weirdo.");
         return;
     }
+    // There's no default phase, sue me
     switch (phase) {
         // Werewolf Phase
         case 0:
             werewolfPhase();
             break;        
         case 1:
-
+            seerPhase();
+            break;
         case 2:
-
+            doctorPhase();
+            break;
+        case 3:
+            morningPhase();
+            break;
     }
 };
 
@@ -290,6 +296,61 @@ function sacrifice() {
         }
     }
     dying = pickedPlayers[highestPlayer];
+    phase++;
+    playGame();
+};
+
+function seerPhase() {
+    var msg1 = players[seer] + ": Choose a player from the list below to see what their role is.\n```\n";
+    for (var i = 0; i < numPlayers; i++) {
+        if (i < 10) 
+            msg1 += i + "       - " + players[i] + "\n";
+        else 
+            msg1 += i + "      - " + players[i] + "\n";
+    }
+    msg1 += "```";
+    console.log(msg1);
+};
+
+function inspectaDeck(seer, target) {
+    var found = false;
+    if (target == doctor) {
+        console.log(players[seer] + ": " + players[target] + " is the doctor.");
+        found = true;
+    }
+    else {
+        for (var i = 0; i < numWerewolves; i++) {
+            if (werewolves[i] == target) {
+                console.log(players[seer] + ": " + players[target] + " is a werewolf.");
+                found = true;
+                break;
+            }
+        }
+    }
+    if (!found) {
+        console.log(players[seer] + ": " + players[target] + " is a villager.");
+    }
+    phase++;
+    playGame();
+};
+
+function doctorPhase() {
+    var msg1 = players[doctor] + ": Choose a player from the list below to keep safe through the night.\n```\n";
+    for (var i = 0; i < numPlayers; i++) {
+        if (i < 10) 
+            msg1 += i + "       - " + players[i] + "\n";
+        else 
+            msg1 += i + "      - " + players[i] + "\n";
+    }
+    msg1 += "```";
+    console.log(msg1);
+};
+
+function doctor(doctor, target) {
+    var found = false;
+    healing = target;
+    phase++;
+    playGame();
 };
 
 function testGame() {
