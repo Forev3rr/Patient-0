@@ -53,12 +53,15 @@ function resetVars() {
 function addPlayer(id) {
     if (numPlayers >= maxPlayers) {
         console.log("Error: Too many players.");
-        return;
+        return null;
     }
+    if (players.includes(id)) 
+        return null;
     players[numPlayers] = id;
     numPlayers++;
     console.log(id + " has ***joined***.");
     console.log("That makes " + numPlayers + " players.\n\n")
+    return numPlayers;
 };
 
 function removePlayer(name) {
@@ -149,79 +152,6 @@ function startGame(name) {
         
     console.log(players[seer] + " is the Seer.");
     console.log(players[doctor] + " is the Doctor.");
-    playGame();
-};
-
-function playGame() {
-    if (!playing) {
-        console.log("Error: There ain't be no game to be played 'round 'ere.");
-        return;
-    }
-    if (preparing) {
-        console.log("Error: You want to play before you start? Do you also put your car into drive before you turn the key?? Fucking weirdo.");
-        return;
-    }
-    // There's no default phase, sue me
-    switch (phase) {
-        // Werewolf Phase
-        case 0:
-            werewolfPhase();
-            break;        
-        case 1:
-            seerPhase();
-            break;
-        case 2:
-            doctorPhase();
-            break;
-        case 3:
-            morningPhase();
-            break;
-    }
-};
-
-function werewolfPhase(){
-    console.log ("Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*");
-    if (numWerewolves == 2) {
-        var msg1 = players[werewolves[0]] + ": " + players[werewolves[1]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        var msg2 = players[werewolves[1]] + ": " + players[werewolves[0]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        for (var i = 0; i < numPlayers; i++) {
-            if (i < 10) {
-                msg1 += i + "       - " + players[i] + "\n";
-                msg2 += i + "       - " + players[i] + "\n";
-            }
-            else { 
-                msg1 += i + "      - " + players[i] + "\n";
-                msg2 += i + "      - " + players[i] + "\n";
-            }
-        }
-        msg1 += "```";
-        msg2 += "```";
-        console.log(msg1);
-        console.log(msg2);
-    }
-    if (numWerewolves == 2) {
-        var msg1 = players[werewolves[0]] + ": " + players[werewolves[1]] + " & " + players[werewolves[2]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        var msg2 = players[werewolves[1]] + ": " + players[werewolves[0]] + " & " + players[werewolves[2]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        var msg3 = players[werewolves[2]] + ": " + players[werewolves[0]] + " & " + players[werewolves[1]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        for (var i = 0; i < numPlayers; i++) {
-            if (i < 10) {
-                msg1 += i + "       - " + players[i] + "\n";
-                msg2 += i + "       - " + players[i] + "\n";
-                msg3 += i + "       - " + players[i] + "\n";
-            }
-            else { 
-                msg1 += i + "      - " + players[i] + "\n";
-                msg2 += i + "      - " + players[i] + "\n";
-                msg3 += i + "      - " + players[i] + "\n";
-            }
-        }
-        msg1 += "```";
-        msg2 += "```";
-        msg3 += "```";
-        console.log(msg1);
-        console.log(msg2);
-        console.log(msg3);
-    }
 };
 
 function killFolks(player, target) {
@@ -290,22 +220,11 @@ function sacrifice() {
             }
         }
     }
+    votes = [];
+    voted = 0;
     dying = pickedPlayers[highestPlayer];
     phase++;
-    playGame();
     return pickedPlayers[highestPlayer];
-};
-
-function seerPhase() {
-    var msg1 = players[seer] + ": Choose a player from the list below to see what their role is.\n```\n";
-    for (var i = 0; i < numPlayers; i++) {
-        if (i < 10) 
-            msg1 += i + "       - " + players[i] + "\n";
-        else 
-            msg1 += i + "      - " + players[i] + "\n";
-    }
-    msg1 += "```";
-    console.log(msg1);
 };
 
 function inspectaDeck(seer, target) {
@@ -331,55 +250,12 @@ function inspectaDeck(seer, target) {
         whatThey = 2;
     }
     phase++;
-    playGame();
     return whatThey;
 };
 
-function doctorPhase() {
-    var msg1 = players[doctor] + ": Choose a player from the list below to keep safe through the night.\n```\n";
-    for (var i = 0; i < numPlayers; i++) {
-        if (i < 10) 
-            msg1 += i + "       - " + players[i] + "\n";
-        else 
-            msg1 += i + "      - " + players[i] + "\n";
-    }
-    msg1 += "```";
-    console.log(msg1);
-};
-
 function doctor(doctor, target) {
-    var found = false;
     healing = target;
     phase++;
-    playGame();
-};
-
-function morningPhase() {
-    console.log("Everybody wake up. " + players[dying] + " was killed by the werewolf.");
-    votes = [];
-    voted = 0;
-    if (dying == healing) {
-        console.log("...but luckily the doctor healed them, so there was no life loss!");
-    }
-    else {
-        removePlayer(players[dying]);
-    }
-
-    if (numWerewolves >= (numPlayers - numWerewolves)) {
-        console.log("Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...");
-        endGame();
-        return;
-    }
-    var msg1 = "Talk amongst yourselves and try to figure out *who* among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n```\n";
-    for (var i = 0; i < numPlayers; i++) {
-        if (i < 10) 
-            msg1 += i + "       - " + players[i] + "\n";
-        else 
-            msg1 += i + "      - " + players[i] + "\n";
-    }
-    msg1 += "```\n";
-    msg1 += "If you aren't sure who could be a filthy, no good, two-timing werewolf, " + players[0] + " can type !sleep to move to night time.";
-    console.log(msg1);
 };
 
 function vote(player) {
@@ -444,7 +320,6 @@ function sacrificeIITurboHDRemix() {
         dying = null;
         healing = null;
         phase = 0;
-        playGame();
         return null;
     }
 
@@ -481,7 +356,6 @@ function sacrificeIITurboHDRemix() {
     dying = null;
     healing = null;
     phase = 0;
-    playGame();
     return youAWolf;
 };
 
@@ -504,12 +378,11 @@ function skipDay() {
     dying = null;
     healing = null;
     phase = 0;
-    playGame();
 };
 
 function endGame() {
     preparing = false;
-    resetVars();
+    playing = false;
 };
 
 function testGame() {
