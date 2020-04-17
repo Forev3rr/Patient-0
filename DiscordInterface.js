@@ -8,7 +8,7 @@ const client = new Discord.Client()
 const config = require("./config.json");
 
 //Channel the game is being played in
-var mainChannel;
+var mainChannelId;
 
 //After this all the bot will respond to messages
 client.on('ready', () => {
@@ -55,50 +55,51 @@ client.on("message", async message => {
     }
 
     message.channel.send(`${message.author} wants to start a game of Werewolf! To join please type **${config.prefix}join**`);
+    mainChannelId = message.channel.id;
     newGame(message.author);
   };
 
   /* Join Command */  
   if(command === "join"){
     if (!preparing) {
-      message.channel.send(`There is currently no game being prepared.. why not start one yourself?`);
+      messageMainChannel(`There is currently no game being prepared.. why not start one yourself?`);
       return;
     }
 
     if (numPlayers >= maxPlayers) {
-      message.channel.send(`It appears that the max players has been reached.. wait how do you have this many friends?`);
+      messageMainChannel(`It appears that the max players has been reached.. wait how do you have this many friends?`);
       return;
     }
 
     if(players.includes(message.author.id)){
-      message.channel.send(`It seems like you have already joined the game... :thinking:`);
+      messageMainChannel(`It seems like you have already joined the game... :thinking:`);
       return;
     }
     addPlayer(message.author.id);
-    message.channel.send(`${message.author.username} has joined as player ${numPlayers}`);
+    messageMainChannel(`${message.author.username} has joined as player ${numPlayers}`);
   }
 
   /* Start Game Command */
   if (command === "startgame") {
-    if (!preparing) {
-      message.channel.send(`Sorry, ${message.author}. No game is happenin' right now :()`);
-      return;
-    }
-    if (playing) {
-      message.channel.send(`Can't start what's started, so don't get started with me.`);
-      return;
-    }
-    if (players < minPlayers) {
-      message.channel.send(`${message.author} is a loser with no friends.`);
-      return;
-    }
-    if(message.author.id != players[0]){
-      message.channel.send(`Only the leader can start the game.`);
-      return;
-    }
-    startGame();
     try{
-      mainChannel = message.channel;
+      mainChannelId = message.channel.id;
+      if (!preparing) {
+        messageMainChannel(`Sorry, ${message.author}. No game is happenin' right now :()`);
+        return;
+      }
+      if (playing) {
+        messageMainChannel(`Can't start what's started, so don't get started with me.`);
+        return;
+      }
+      if (players < minPlayers) {
+        messageMainChannel(`${message.author} is a loser with no friends.`);
+        return;
+      }
+      if(message.author.id != players[0]){
+        messageMainChannel(`Only the leader can start the game.`);
+        return;
+      }
+      startGame();
     }
     catch{
       console.log("mainChannel has not been assigned properly...");
@@ -107,7 +108,7 @@ client.on("message", async message => {
 
   if(command === "endgame"){
     if(preparing && message.channel == channel && players.indexOf(message.author.id) === 0){
-      message.channel.send(`Game has ended.`);
+      messageMainChannel(`Game has ended.`);
       preparing = false;
     }
   }
@@ -115,11 +116,11 @@ client.on("message", async message => {
   /* TESTING ONLY COMMANDS*/
   if (command === "_toggleplaying") {
     if(playing){
-      message.channel.send(`Setting *playing* to false.`);
+      messageMainChannel(`Setting *playing* to false.`);
       playing = false;
     }
     else{
-      message.channel.send(`Setting *playing* to true.`);
+      messageMainChannel(`Setting *playing* to true.`);
       playing = true;
     }
   }
@@ -150,7 +151,7 @@ client.on("message", async message => {
     morningNotified = false;
 
     //Message the channel
-    message.mainChannel.send(`Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*`);
+    messageMainChannel(`Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*`);
     
     //Message the Werwolves
     messageWereWolves(`You are a werewolf :wolf: :full_moon:! Get ready to **!kill** some b- ... uh.. I mean villagers.`);
@@ -198,7 +199,7 @@ client.on("message", async message => {
         }
       }
       else {
-        message.channel.send(`Yo ${message.author}, you tryna out yourself or? This is a *DM only* command.`);
+        messageMainChannel(`Yo ${message.author}, you tryna out yourself or? This is a *DM only* command.`);
       }
     }
   }
@@ -261,7 +262,7 @@ client.on("message", async message => {
         }
       }
       else{
-        message.channel.send(`Yo ${message.author}, you tryna out yourself or? This is a *DM only* command.`);
+        messageMainChannel(`Yo ${message.author}, you tryna out yourself or? This is a *DM only* command.`);
       }
     }
   }
@@ -308,14 +309,14 @@ client.on("message", async message => {
     doctorNotified = false;
 
     //Alert the masses who dieddd
-    message.mainChannel.send(`Everybody wake up. ${(await client.users.fetch(players[dying]))} was mutilated in their sleep!`);
+    messageMainChannel(`Everybody wake up. ${(await client.users.fetch(players[dying]))} was mutilated in their sleep!`);
     if(dying === healing){
-      message.mainChannel.send(`... but luckily the doctor patched em up, so no life lost!`);
+      messageMainChannel(`... but luckily the doctor patched em up, so no life lost!`);
     }
 
     //Alert if werewolves win
     if(numWerewolves >= (numPlayers - numWerewolves)){
-      message.mainChannel.send(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
+      messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
       resetVars();
       return;
     }
@@ -327,7 +328,7 @@ client.on("message", async message => {
     }
     msg1 = msg1.concat(`\n`);
     msg1 = msg1.concat(`If you aren't sure who could be a filthy, no good, two-timing werewolf, ${(await client.users.fetch(players[0])).username} can type !sleep to move to night time.`)
-    message.mainChannel.send(msg1);
+    messageMainChannel(msg1);
 
     //Morning notification complete
     morningNotified = true;
@@ -341,36 +342,37 @@ client.on("message", async message => {
       if (!playersWhoVoted.includes(message.author.id)){
         if(players[args - 1] != 'undefined'){
           var sacrificeTime = vote(args-1);
+          playersWhoVoted.push[args-1];
           if(sacrificeTime != null){
             var ret = sacrificeTime();
             if (ret === null){
-              message.mainChannel.send(`Looks like nobody dies today. Good luck tonight!`);
+              messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
             }
             if(ret === true){
-              message.mainChannel.send(`Looks like ${(await client.users.fetch(players[dying])).username} was a werewolf! Nice!`);
+              messageMainChannel(`Looks like ${(await client.users.fetch(players[dying])).username} was a werewolf! Nice!`);
             }
             //end game state
             if(numWerewolves >= (numPlayers - numWerewolves)){
-              message.mainChannel.send(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
+              messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
               resetVars();
             }
             //end game state
             else if(numWerewolves == 0){
-              message.mainChannel.send(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
+              messageMainChannel(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
               resetVars();
             }
           }
         }
       }
       else{
-        message.mainChannel.send(`Hey ${message.author} you already voted!`);
+        messageMainChannel(`Hey ${message.author} you already voted!`);
       }
     }
     if(command === "sleep" & players.indexOf(message.author.id) === 0){
       skipDay();
     }
   }
-  
+
   function messageWereWolves(message){
     for(let i = 0; i < werewolves.length; i++){
       messageUser(players[werewolves[i]], message);
@@ -380,6 +382,10 @@ client.on("message", async message => {
    function messageUser(userId, message){
      client.users.fetch(userId).then(user => {user.send(message)});
    }
+
+  function messageMainChannel(message){
+    client.channels.fetch(mainChannelId).then(channel => {channel.send(message)});
+  }
 
    function messageChannelAndReturn(message){
      message.channel.send(message);
@@ -470,12 +476,15 @@ function resetVars() {
 function addPlayer(id) {
     if (numPlayers >= maxPlayers) {
         console.log("Error: Too many players.");
-        return;
+        return null;
     }
+    if (players.includes(id)) 
+        return null;
     players[numPlayers] = id;
     numPlayers++;
     console.log(id + " has ***joined***.");
     console.log("That makes " + numPlayers + " players.\n\n")
+    return numPlayers;
 };
 
 function removePlayer(name) {
@@ -566,79 +575,6 @@ function startGame(name) {
         
     console.log(players[seer] + " is the Seer.");
     console.log(players[doctor] + " is the Doctor.");
-    playGame();
-};
-
-function playGame() {
-    if (!playing) {
-        console.log("Error: There ain't be no game to be played 'round 'ere.");
-        return;
-    }
-    if (preparing) {
-        console.log("Error: You want to play before you start? Do you also put your car into drive before you turn the key?? Fucking weirdo.");
-        return;
-    }
-    // There's no default phase, sue me
-    switch (phase) {
-        // Werewolf Phase
-        case 0:
-            werewolfPhase();
-            break;        
-        case 1:
-            seerPhase();
-            break;
-        case 2:
-            doctorPhase();
-            break;
-        case 3:
-            morningPhase();
-            break;
-    }
-};
-
-function werewolfPhase(){
-    console.log ("Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*");
-    if (numWerewolves == 2) {
-        var msg1 = players[werewolves[0]] + ": " + players[werewolves[1]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        var msg2 = players[werewolves[1]] + ": " + players[werewolves[0]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        for (var i = 0; i < numPlayers; i++) {
-            if (i < 10) {
-                msg1 += i + "       - " + players[i] + "\n";
-                msg2 += i + "       - " + players[i] + "\n";
-            }
-            else { 
-                msg1 += i + "      - " + players[i] + "\n";
-                msg2 += i + "      - " + players[i] + "\n";
-            }
-        }
-        msg1 += "```";
-        msg2 += "```";
-        console.log(msg1);
-        console.log(msg2);
-    }
-    if (numWerewolves == 2) {
-        var msg1 = players[werewolves[0]] + ": " + players[werewolves[1]] + " & " + players[werewolves[2]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        var msg2 = players[werewolves[1]] + ": " + players[werewolves[0]] + " & " + players[werewolves[2]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        var msg3 = players[werewolves[2]] + ": " + players[werewolves[0]] + " & " + players[werewolves[1]] + " is your fellow werewolf. Message them to discuss who to kill tonight and then reply with !kill *X*\nLook at the table below to find the appropriate *X* value for your victim.\n```\n";
-        for (var i = 0; i < numPlayers; i++) {
-            if (i < 10) {
-                msg1 += i + "       - " + players[i] + "\n";
-                msg2 += i + "       - " + players[i] + "\n";
-                msg3 += i + "       - " + players[i] + "\n";
-            }
-            else { 
-                msg1 += i + "      - " + players[i] + "\n";
-                msg2 += i + "      - " + players[i] + "\n";
-                msg3 += i + "      - " + players[i] + "\n";
-            }
-        }
-        msg1 += "```";
-        msg2 += "```";
-        msg3 += "```";
-        console.log(msg1);
-        console.log(msg2);
-        console.log(msg3);
-    }
 };
 
 function killFolks(player, target) {
@@ -707,22 +643,11 @@ function sacrifice() {
             }
         }
     }
+    votes = [];
+    voted = 0;
     dying = pickedPlayers[highestPlayer];
     phase++;
-    playGame();
     return pickedPlayers[highestPlayer];
-};
-
-function seerPhase() {
-    var msg1 = players[seer] + ": Choose a player from the list below to see what their role is.\n```\n";
-    for (var i = 0; i < numPlayers; i++) {
-        if (i < 10) 
-            msg1 += i + "       - " + players[i] + "\n";
-        else 
-            msg1 += i + "      - " + players[i] + "\n";
-    }
-    msg1 += "```";
-    console.log(msg1);
 };
 
 function inspectaDeck(seer, target) {
@@ -748,55 +673,12 @@ function inspectaDeck(seer, target) {
         whatThey = 2;
     }
     phase++;
-    playGame();
     return whatThey;
 };
 
-function doctorPhase() {
-    var msg1 = players[doctor] + ": Choose a player from the list below to keep safe through the night.\n```\n";
-    for (var i = 0; i < numPlayers; i++) {
-        if (i < 10) 
-            msg1 += i + "       - " + players[i] + "\n";
-        else 
-            msg1 += i + "      - " + players[i] + "\n";
-    }
-    msg1 += "```";
-    console.log(msg1);
-};
-
-function heal(target) {
-    var found = false;
+function doctor(doctor, target) {
     healing = target;
     phase++;
-    playGame();
-};
-
-function morningPhase() {
-    console.log("Everybody wake up. " + players[dying] + " was killed by the werewolf.");
-    votes = [];
-    voted = 0;
-    if (dying == healing) {
-        console.log("...but luckily the doctor healed them, so there was no life loss!");
-    }
-    else {
-        removePlayer(players[dying]);
-    }
-
-    if (numWerewolves >= (numPlayers - numWerewolves)) {
-        console.log("Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...");
-        endGame();
-        return;
-    }
-    var msg1 = "Talk amongst yourselves and try to figure out *who* among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n```\n";
-    for (var i = 0; i < numPlayers; i++) {
-        if (i < 10) 
-            msg1 += i + "       - " + players[i] + "\n";
-        else 
-            msg1 += i + "      - " + players[i] + "\n";
-    }
-    msg1 += "```\n";
-    msg1 += "If you aren't sure who could be a filthy, no good, two-timing werewolf, " + players[0] + " can type !sleep to move to night time.";
-    console.log(msg1);
 };
 
 function vote(player) {
@@ -861,7 +743,6 @@ function sacrificeIITurboHDRemix() {
         dying = null;
         healing = null;
         phase = 0;
-        playGame();
         return null;
     }
 
@@ -898,7 +779,6 @@ function sacrificeIITurboHDRemix() {
     dying = null;
     healing = null;
     phase = 0;
-    playGame();
     return youAWolf;
 };
 
@@ -921,12 +801,11 @@ function skipDay() {
     dying = null;
     healing = null;
     phase = 0;
-    playGame();
 };
 
 function endGame() {
     preparing = false;
-    //resetVars();
+    playing = false;
 };
 
 function testGame() {
