@@ -2,7 +2,7 @@
 const Discord = require('discord.js')
 
 //Required for the Client
-const client = new Discord.Client()
+const client = new Discord.Client();
 
 //Configuratio file include
 const config = require("./config.json");
@@ -114,6 +114,10 @@ client.on("message", async message => {
   }
 
   /* TESTING ONLY COMMANDS*/
+  if(command === "_getplayers"){
+    message.channel.send(returnPlayers());
+  }
+
   if (command === "_toggleplaying") {
     if (playing) {
       messageMainChannel(`Setting *playing* to false.`);
@@ -201,7 +205,7 @@ client.on("message", async message => {
         //Try/Catch since args could be bad
         try {
           if (!werewolves.includes(args-1)) {
-            console.log(`id: ${players.indexOf(message.author.id)} is being sent to killFolks command`);
+            console.log(`id: ${players.indexOf(message.author.id)} selected ${players[args-1]} to be sent to killFolks command`);
             killFolks(players.indexOf(message.author.id), args-1);
             playersWhoVotedToKill.push(message.author.id);
             message.channel.send(`You set out to try to kill ${(await client.users.fetch(players[args-1])).username} tonight. Let's see how it goes!`);
@@ -330,10 +334,9 @@ client.on("message", async message => {
     doctorNotified = false;
 
     //Alert the masses who dieddd
-    console.log(`morning phase, dying is ${dying}`);
-    messageMainChannel(`Everybody wake up. ${(await client.users.fetch(players[dying])).username} was mutilated in their sleep!`);
-    console.log(`dying is ${dying}, healing is ${healing}`)
-    if (dying == healing) {
+    console.log(`morning phase, dying is ${(await client.users.fetch(dyingId).username)}`);
+    messageMainChannel(`Everybody wake up. ${(await client.users.fetch(dyingId).username)} was mutilated in their sleep!`);
+    if (dyingId == player[healing]) {
       messageMainChannel(`... but luckily the doctor patched em up, so no life lost!`);
     }
 
@@ -369,19 +372,19 @@ client.on("message", async message => {
           playersWhoVoted.push[message.author.id];
           if (sacrificeTime != null) {
             console.log(`entering sacrifice time`);
-            if (ret === null) {
+            if (ret === -1) {
               messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
             }
             if (ret === true) {
-              messageMainChannel(`Looks like ${(await client.users.fetch(killed)).username} was a werewolf! Nice!`);
+              messageMainChannel(`Looks like ${(await client.users.fetch(dyingId)).username} was a werewolf! Nice!`);
             }
             //end game state
-            if (numWerewolves >= (numPlayers - numWerewolves)) {
+            if (ret === 1) {
               messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
               resetVars();
             }
             //end game state
-            else if (numWerewolves == 0) {
+            else if (ret === 2) {
               messageMainChannel(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
               resetVars();
             }
@@ -415,6 +418,14 @@ client.on("message", async message => {
     message.channel.send(message);
     return;
   }
+
+  // function returnPlayers(){
+  //   var playersReturn;
+  //   for(let i = 0; i < players.length; i++){
+  //     playersReturn = playersReturn.concat(`Index ${i}. ${(await client.users.fetch(players[i])).username}\n`);
+  //   }
+  //   return playersReturn;
+  // }
 });
 
 var seerNotified = false;
@@ -464,8 +475,9 @@ var numWerewolves = 2;
 var votes = [];
 var voted = 0;
 var dying = null;
+var dyingId = null;
 var healing = null;
-var killed;
+var killedId;
 
 // phase is in charge of remembering what part of the round we're on
 //      0 = Night Start
@@ -495,7 +507,9 @@ function resetVars() {
   votes = [];
   voted = 0;
   dying = null;
+  dyingId = null;
   healing = null;
+  healingId = null;
   phase = 0;
 };
 
@@ -675,6 +689,7 @@ function sacrifice() {
   votes = [];
   voted = 0;
   dying = pickedPlayers[highestPlayer];
+  dyingId = players[dying];
   phase++;
   console.log(`dying is ${dying}`);
   return pickedPlayers[highestPlayer];
@@ -709,7 +724,6 @@ function inspectaDeck(seer, target) {
 function heal(target) {
   healing = target;
   if (healing != dying){
-    killed = players[dying];
     removePlayer(players[dying]);
   }
   phase++;
@@ -775,13 +789,17 @@ function sacrificeIITurboHDRemix() {
     votes = [];
     voted = 0;
     dying = null;
+    dyingId = null;
     healing = null;
     phase = 0;
-    return null;
+    return -1;
   }
 
   //This only happens if there's no tie
   dying = pickedPlayers[highestPlayer];
+  console.log(`Players[dying] = ${players[dying]}`);
+  dyingId = players[dying];
+  console.log(`Dying ID: ${dyingId}`);
   var found = false;
   for (var i = 0; i < numWerewolves; i++) {
     if (werewolves[i] == dying) {
@@ -800,12 +818,12 @@ function sacrificeIITurboHDRemix() {
   if (numWerewolves >= (numPlayers - numWerewolves)) {
     console.log("Well everyone, you tried your best, but it just wasn't good enough.\n**Werewolves win...**");
     endGame();
-    return;
+    return 1;
   }
   else if (numWerewolves == 0) {
     console.log("Fuck you, werewolves!!!!!\n**Villagers win!**");
     endGame();
-    return;
+    return 2;
   }
 
   votes = [];
