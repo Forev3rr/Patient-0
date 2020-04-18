@@ -12,14 +12,14 @@ var mainChannelId;
 
 //After this all the bot will respond to messages
 client.on('ready', () => {
-    console.log("Connected as " + client.user.tag)
+  console.log("Connected as " + client.user.tag)
 })
 
 client.on("message", async message => {
 
   //If bot with message, do nothing
   if (message.author.bot) return;
-  
+
   //Ingore messages with other prefixes
   if (message.content.indexOf(config.prefix) !== 0) return;
 
@@ -38,7 +38,7 @@ client.on("message", async message => {
   ////////////////////////////!MEMES
 
   /* Ping Command */
-  if(command === "ping"){
+  if (command === "ping") {
     const response = await message.channel.send("Ping?");
     response.edit(`Pong! Latency is ${response.createdTimestamp - message.createdTimestamp}ms. API latency is ${Math.round(client.ping)}ms`);
   }
@@ -56,11 +56,11 @@ client.on("message", async message => {
 
     message.channel.send(`${message.author} wants to start a game of Werewolf! To join please type **${config.prefix}join**`);
     mainChannelId = message.channel.id;
-    newGame(message.author);
+    newGame(message.author.id);
   };
 
-  /* Join Command */  
-  if(command === "join"){
+  /* Join Command */
+  if (command === "join") {
     if (!preparing) {
       messageMainChannel(`There is currently no game being prepared.. why not start one yourself?`);
       return;
@@ -71,7 +71,7 @@ client.on("message", async message => {
       return;
     }
 
-    if(players.includes(message.author.id)){
+    if (players.includes(message.author.id)) {
       messageMainChannel(`It seems like you have already joined the game... :thinking:`);
       return;
     }
@@ -81,7 +81,7 @@ client.on("message", async message => {
 
   /* Start Game Command */
   if (command === "startgame") {
-    try{
+    try {
       mainChannelId = message.channel.id;
       if (!preparing) {
         messageMainChannel(`Sorry, ${message.author}. No game is happenin' right now :()`);
@@ -91,23 +91,23 @@ client.on("message", async message => {
         messageMainChannel(`Can't start what's started, so don't get started with me.`);
         return;
       }
-      if (players < minPlayers) {
+      if (numPlayers < minPlayers) {
         messageMainChannel(`${message.author} is a loser with no friends.`);
         return;
       }
-      if(message.author.id != players[0]){
+      if (message.author.id != players[0]) {
         messageMainChannel(`Only the leader can start the game.`);
         return;
       }
-      startGame();
+      startGame(message.author.id);
     }
     catch{
       console.log("mainChannel has not been assigned properly...");
     }
   }
 
-  if(command === "endgame"){
-    if(preparing && message.channel == channel && players.indexOf(message.author.id) === 0){
+  if (command === "endgame") {
+    if (preparing && message.channel.id == mainChannelId && players.indexOf(message.author.id) === 0) {
       messageMainChannel(`Game has ended.`);
       preparing = false;
     }
@@ -115,83 +115,165 @@ client.on("message", async message => {
 
   /* TESTING ONLY COMMANDS*/
   if (command === "_toggleplaying") {
-    if(playing){
+    if (playing) {
       messageMainChannel(`Setting *playing* to false.`);
       playing = false;
     }
-    else{
+    else {
       messageMainChannel(`Setting *playing* to true.`);
       playing = true;
     }
   }
 
-  if(command === "_phaseselect"){
+  if (command === "_phaseselect") {
     message.channel.send(`You are setting the phase to: ${args}`);
     phase = args;
   }
 
-  if(command === "_werewolfadd"){
+  if(command === "_getphase"){
+    message.channel.send(phase);
+  }
+
+  if (command === "_werewolfadd") {
     message.channel.send(`${message.author} is now a werewolf.`);
     werewolves.push(message.author.id);
   }
 
-  if(command === "_listwerewolves"){
+  if (command === "_listwerewolves") {
     var j;
-    for(let i = 0; i < werewolves.length; i++){
+    for (let i = 0; i < numWerewolves; i++) {
       j = i + 1;
       message.channel.send(`${j}. ${(await client.users.fetch(werewolves[i])).username}`);
     }
   }
 
+  if (command === "_playerIndexCheck"){
+    message.channel.send(players.indexOf(message.author.id));
+  }
+
   /* Non-command centric messages */
-  
+
   /* Werewolf Phase */
-  if(phase === 0 & !werewolvesNotified & playing){
+  if (phase === 0 & !werewolvesNotified & playing) {
     //Reset this value
     morningNotified = false;
 
     //Message the channel
     messageMainChannel(`Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*`);
-    
+
     //Message the Werwolves
     messageWereWolves(`You are a werewolf :wolf: :full_moon:! Get ready to **!kill** some b- ... uh.. I mean villagers.`);
     var msg1 = `Here's the wolf pack tonight:`;
-    for(let i = 0; i < werewolves.length; i++){
-      msg1 = msg1.concat(`\nWerewolf ${i+1}. ${(await client.users.fetch(werewolves[i])).username}`)
+    for (let i = 0; i < numWerewolves; i++) {
+      msg1 = msg1.concat(`\nWerewolf ${i + 1}. ${(await client.users.fetch(players[werewolves[i]])).username}`)
     }
     messageWereWolves(msg1);
 
     //Message the kill list
     var msg2 = `Okay, let's get to the fun part. **!kill**-ing. Type **!kill** # for the player ya want to slaughter.`
-    var playersToKill = [];
-    for(let i = 0; i < players.length; i++){
-      if (!werewolves.includes(players[i])){
-        msg2 = msg2.concat(`\nPlayer ${i+1}. ${(await client.users.fetch(players[i])).username}`)
+    
+    for (let i = 0; i < numPlayers; i++) {
+      if (!werewolves.includes(i)) {
+        msg2 = msg2.concat(`\nPlayer ${i + 1}. ${(await client.users.fetch(players[i])).username}`)
       }
     }
     messageWereWolves(msg2)
-
+    playersWhoVotedToKill = [];
     werewolvesNotified = true;
   }
 
-  if(phase === 0 & werewolvesNotified & playing){    
+  if (phase === 0 & werewolvesNotified & playing) {
     if (command === "kill") {
-      
+
       //Only message if it's a dm channel
       if (message.channel.type == "dm") {
 
         //If not a werwolf yeet em outta this logic
-        if(!werewolves.includes(players.indexOf(message.author.id))){
+        if (!werewolves.includes(players.indexOf(message.author.id))) {
           return; //Not a werwolf
         }
-        
+
+        //If voted already, yeet
+        if(playersWhoVotedToKill.includes(message.author.id)){
+          message.channel.send(`Ya voted already d00d.`);
+        }
+
         //Try/Catch since args could be bad
-        try{
-          if(!werewolves.includes(players[args-1])){
+        try {
+          if (!werewolves.includes(args-1)) {
+            console.log(`id: ${players.indexOf(message.author.id)} is being sent to killFolks command`);
             killFolks(players.indexOf(message.author.id), args-1);
+            playersWhoVotedToKill.push(message.author.id);
+            message.channel.send(`You set out to try to kill ${(await client.users.fetch(players[args-1])).username} tonight. Let's see how it goes!`);
           }
-          else{
+          else {
             message.channel.send(`yo ${args} is a werewolf, not a villager. Try again;`);
+          }
+        }
+        catch(e){
+          message.channel.send(`It looks like your argument was invalid, please select a # from the list above.`);
+          console.log(e);
+        }
+      }
+      else {
+        messageMainChannel(`Yo ${message.author}, you tryna out yourself or? This is a *DM only* command.`);
+      }
+    }
+  }
+
+  if (phase === 1 & !seerNotified & playing) {
+    console.log(`Seer message entered!`);
+    //Reset this value
+    werewolvesNotified = false;
+
+    //Message the seer
+    var msg = `You are the Seer :eye: :see_no_evil:! **!inspect** from the following contestants:`
+    for (let i = 0; i < numPlayers; i++) {
+      msg = msg.concat(`\n${i + 1}. ${(await client.users.fetch(players[i])).username}`)
+    }
+    messageUser(players[seer], msg);
+    seerNotified = true;
+  }
+
+  if (phase === 1 & seerNotified & playing) {
+    if (command === "inspect") {
+      if (message.channel.type == "dm") {
+        console.log(`Inspect entered!`);
+        //Are they seer or are they naught
+        if (players.indexOf(message.author.id) != seer) {
+          console.log(`Not the seer! ${message.author.id}`);
+          return; //not a seer
+        }
+
+        //try/catch cuz args
+        try {
+          if (seer != args-1) {
+            if (players[args - 1] != 'undefined') {
+              var whatAreThey = inspectaDeck(seer, args-1);
+              var theyAre;
+              console.log(`Entering switch case with argument ${whatAreThey}`)
+              switch (whatAreThey) {
+                case 0:
+                  theyAre = `Werewolf`;
+                  break;
+
+                case 1:
+                  theyAre = `Doctor`;
+                  break;
+
+                case 2:
+                  theyAre = `Villager`;
+                  break;
+              }
+              console.log(`The response is ${theyAre}`);
+              message.channel.send(`Looks like the person you are inspecting is a ... ${theyAre}!`);
+            }
+            else {
+              message.channel.send(`It looks like your argument was invalid, please select a # from the list above.`);
+            }
+          }
+          else {
+            message.channel.send(`Why you tryna inspect yourself? To each their own?`);
           }
         }
         catch{
@@ -204,79 +286,17 @@ client.on("message", async message => {
     }
   }
 
-  if(phase === 1 & !seerNotified & playing){
-
-    //Reset this value
-    werewolvesNotified = false;
-
-    //Message the seer
-    var msg = `You are the Seer :eye: :see_no_evil:! **!inspect** from the following contestants:`
-    for(let i = 0; i < players.length; i++){
-      msg = msg.concat(`\n${i+1}. ${(await client.users.fetch(players[i])).username}`)
-    }
-    messageUser(players[seer], msg);
-    seerNotified = true;
-  }
-
-  if(phase === 1 & seerNotified & playing){
-    if(command === "inspect"){
-      if(message.channel.type == "dm"){
-
-        //Are they seer or are they naught
-        if(players.indexOf(message.author.id) != seer){
-          return; //not a seer
-        }
-
-        //try/catch cuz args
-        try{
-          if(seer != args-1){
-            if(players[args-1] != 'undefined'){
-              var whatAreThey = inspectaDeck(seer, args-1);
-              var theyAre;
-              switch (whatAreThey) {
-                case 0:
-                  theyAre = `Doctor`;
-                  break;
-  
-                case 1:
-                  theyAre = `Werewolf`;
-                  break;
-  
-                case 2:
-                  theyAre = `Villager`;
-                  break;
-              }
-
-              message.channel.send(`Looks like the person you are inspecting is a ... ${theyAre}!`);
-            }
-            else{
-              message.channel.send(`It looks like your argument was invalid, please select a # from the list above.`);
-            }
-          }
-          else{
-            message.channel.send(`Why you tryna inspect yourself? To each their own?`);
-          }
-        }
-        catch{
-          message.channel.send(`It looks like your argument was invalid, please select a # from the list above.`);
-        }
-      }
-      else{
-        messageMainChannel(`Yo ${message.author}, you tryna out yourself or? This is a *DM only* command.`);
-      }
-    }
-  }
-
-  if(phase === 2 & !doctorNotified & playing){
+  if (phase === 2 & !doctorNotified & playing) {
     //Reset this value
     seerNotified = false;
 
     //Message the doctor
     var msg = `You are the doctor :heart: :cross:! Who do you want to **!heal** (it can even be yourself :wink:):`;
-    for(let i = 0; i < players.length; i++){
-      msg = msg.concat(`\n${i+1}. ${(await client.users.fetch(players[i])).username}`);
+    for (let i = 0; i < numPlayers; i++) {
+      msg = msg.concat(`\n${i + 1}. ${(await client.users.fetch(players[i])).username}`);
     }
-    messageUser(players[doctor]);
+    messageUser(players[doctor], msg);
+    doctorNotified = true;
   }
 
   if (phase === 2 & doctorNotified & playing) {
@@ -290,8 +310,9 @@ client.on("message", async message => {
 
         //try catch yea yea
         try {
-          if (players[args - 1] != 'undefined') {
-            heal(args - 1);
+          if (players[args-1] != 'undefined') {
+            heal(args-1);
+            message.channel.send(`You set out to heal ${(await client.users.fetch(players[args-1])).username} tonight, let's see how it goes!`);
           }
           else {
             message.channel.send(`It looks like your argument was invalid, please select a # from the list above.`);
@@ -304,27 +325,29 @@ client.on("message", async message => {
     }
   }
 
-  if(phase === 3 & !morningNotified & playing){
+  if (phase === 3 & !morningNotified & playing) {
     //Reset this value
     doctorNotified = false;
 
     //Alert the masses who dieddd
-    messageMainChannel(`Everybody wake up. ${(await client.users.fetch(players[dying]))} was mutilated in their sleep!`);
-    if(dying === healing){
+    console.log(`morning phase, dying is ${dying}`);
+    messageMainChannel(`Everybody wake up. ${(await client.users.fetch(players[dying])).username} was mutilated in their sleep!`);
+    console.log(`dying is ${dying}, healing is ${healing}`)
+    if (dying == healing) {
       messageMainChannel(`... but luckily the doctor patched em up, so no life lost!`);
     }
 
     //Alert if werewolves win
-    if(numWerewolves >= (numPlayers - numWerewolves)){
+    if (numWerewolves >= (numPlayers - numWerewolves)) {
       messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
-      resetVars();
+      endGame();
       return;
     }
 
     //okay if werewolves didn't win lets talk about lynching
     var msg1 = `Talk amongst yourselves and try to figure out *who* among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n`;
-    for (let i = 0; i < players.length; i++){
-        msg1 = msg1.concat(`\n ${i+1}. ${(await client.users.fetch(players[i])).username}`);
+    for (let i = 0; i < numPlayers; i++) {
+      msg1 = msg1.concat(`\n ${i + 1}. ${(await client.users.fetch(players[i])).username}`);
     }
     msg1 = msg1.concat(`\n`);
     msg1 = msg1.concat(`If you aren't sure who could be a filthy, no good, two-timing werewolf, ${(await client.users.fetch(players[0])).username} can type !sleep to move to night time.`)
@@ -337,60 +360,61 @@ client.on("message", async message => {
     playersWhoVoted = [];
   }
 
-  if(phase === 3 & playing & morningNotified & message.channel === mainChannel){
-    if(command === "vote"){
-      if (!playersWhoVoted.includes(message.author.id)){
-        if(players[args - 1] != 'undefined'){
-          var sacrificeTime = vote(args-1);
-          playersWhoVoted.push[args-1];
-          if(sacrificeTime != null){
-            var ret = sacrificeTime();
-            if (ret === null){
+  if (phase === 3 & playing & morningNotified & mainChannelId === message.channel.id) {
+    if (command === "vote") {
+      if (!playersWhoVoted.includes(message.author.id)) {
+        if (players[args-1] != 'undefined') {
+          var sacrificeTime = vote(args - 1);
+          messageMainChannel(`${message.author} has voted to lynch ${(await client.users.fetch(players[args-1])).username}!`);
+          playersWhoVoted.push[message.author.id];
+          if (sacrificeTime != null) {
+            console.log(`entering sacrifice time`);
+            if (ret === null) {
               messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
             }
-            if(ret === true){
-              messageMainChannel(`Looks like ${(await client.users.fetch(players[dying])).username} was a werewolf! Nice!`);
+            if (ret === true) {
+              messageMainChannel(`Looks like ${(await client.users.fetch(killed)).username} was a werewolf! Nice!`);
             }
             //end game state
-            if(numWerewolves >= (numPlayers - numWerewolves)){
+            if (numWerewolves >= (numPlayers - numWerewolves)) {
               messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
               resetVars();
             }
             //end game state
-            else if(numWerewolves == 0){
+            else if (numWerewolves == 0) {
               messageMainChannel(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
               resetVars();
             }
           }
         }
       }
-      else{
+      else {
         messageMainChannel(`Hey ${message.author} you already voted!`);
       }
     }
-    if(command === "sleep" & players.indexOf(message.author.id) === 0){
+    if (command === "sleep" & players.indexOf(message.author.id) === 0) {
       skipDay();
     }
   }
 
-  function messageWereWolves(message){
-    for(let i = 0; i < werewolves.length; i++){
+  function messageWereWolves(message) {
+    for (let i = 0; i < numWerewolves; i++) {
       messageUser(players[werewolves[i]], message);
     }
   }
 
-   function messageUser(userId, message){
-     client.users.fetch(userId).then(user => {user.send(message)});
-   }
-
-  function messageMainChannel(message){
-    client.channels.fetch(mainChannelId).then(channel => {channel.send(message)});
+  function messageUser(userId, message) {
+    client.users.fetch(userId).then(user => { user.send(message) });
   }
 
-   function messageChannelAndReturn(message){
-     message.channel.send(message);
-     return;
-   }
+  function messageMainChannel(message) {
+    client.channels.fetch(mainChannelId).then(channel => { channel.send(message) });
+  }
+
+  function messageChannelAndReturn(message) {
+    message.channel.send(message);
+    return;
+  }
 });
 
 var seerNotified = false;
@@ -398,6 +422,7 @@ var doctorNotified = false;
 var werewolvesNotified = false;
 var morningNotified = false;
 var playersWhoVoted = [];
+var playersWhoVotedToKill = [];
 
 // var chairs = [
 //   `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020-stealth&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWTqq_fx-XKjgA6bhzize2-5s_GdqpifKt2Sy6VZgm2XQ_P8AhbokV4aAocwEALw_wcB`,
@@ -440,6 +465,7 @@ var votes = [];
 var voted = 0;
 var dying = null;
 var healing = null;
+var killed;
 
 // phase is in charge of remembering what part of the round we're on
 //      0 = Night Start
@@ -447,370 +473,378 @@ var healing = null;
 var phase = 0;
 
 function getRandom(arr, n) {
-    var result = new Array(n),
-        len = arr.length,
-        taken = new Array(len);
-    if (n > len)
-        throw new RangeError("getRandom: more elements taken than available");
-    while (n--) {
-        var x = Math.floor(Math.random() * len);
-        result[n] = arr[x in taken ? taken[x] : x];
-        taken[x] = --len in taken ? taken[len] : len;
-        //console.log("Random " + n + ": " + result[n]);
-    }
-    return result;
+  var result = new Array(n),
+    len = arr.length,
+    taken = new Array(len);
+  if (n > len)
+    throw new RangeError("getRandom: more elements taken than available");
+  while (n--) {
+    var x = Math.floor(Math.random() * len);
+    result[n] = arr[x in taken ? taken[x] : x];
+    taken[x] = --len in taken ? taken[len] : len;
+    //console.log("Random " + n + ": " + result[n]);
+  }
+  return result;
 }
 
 function resetVars() {
-    numPlayers = 0;
-    players = [];
-    numWerewolves = 2;
-    playing = false;
-    votes = [];
-    voted = 0;
-    dying = null;
-    healing = null;
-    phase = 0;
+  numPlayers = 0;
+  players = [];
+  numWerewolves = 2;
+  playing = false;
+  votes = [];
+  voted = 0;
+  dying = null;
+  healing = null;
+  phase = 0;
 };
 
 function addPlayer(id) {
-    if (numPlayers >= maxPlayers) {
-        console.log("Error: Too many players.");
-        return null;
-    }
-    if (players.includes(id)) 
-        return null;
-    players[numPlayers] = id;
-    numPlayers++;
-    console.log(id + " has ***joined***.");
-    console.log("That makes " + numPlayers + " players.\n\n")
-    return numPlayers;
+  if (numPlayers >= maxPlayers) {
+    console.log("Error: Too many players.");
+    return null;
+  }
+  if (players.includes(id))
+    return null;
+  players[numPlayers] = id;
+  numPlayers++;
+  console.log(id + " has ***joined***.");
+  console.log("That makes " + numPlayers + " players.\n\n")
+  return numPlayers;
 };
 
 function removePlayer(name) {
-    if (numPlayers <= 0) {
-        console.log("Error: There ain't no GD players.");
-        return;
-    }
-    if (name == players[0]) {
-        console.log("Error: How you gon' play with no leader, blood?");
-        return;
-    }
-    var tempPlayers = [];
-    var found = false;
-    for (var i = 0; i < numPlayers; i++) {
-        if (found)
-            tempPlayers[i-1] = players[i];
+  if (numPlayers <= 0) {
+    console.log("Error: There ain't no GD players.");
+    return;
+  }
+  // if (name == players[0]) {
+  //   console.log("Error: How you gon' play with no leader, blood?");
+  //   return;
+  // }
+  var tempPlayers = [];
+  var found = false;
+  for (var i = 0; i < numPlayers; i++) {
+    if (found)
+      tempPlayers[i - 1] = players[i];
 
-        else
-            tempPlayers[i] = players[i];
+    else
+      tempPlayers[i] = players[i];
 
-        if (players[i] == name)
-            found = true;
-    }
-    if (!found) {
-        console.log("Error: " + name + " is a little princess and is therefore in another castle.");
-        return;
-    }
-    players = tempPlayers;
-    numPlayers--;
-    
-    console.log(name + " has ***left***.");
-    console.log("That makes " + numPlayers + " players.\n\n")
+    if (players[i] == name)
+      found = true;
+  }
+  if (!found) {
+    console.log("Error: " + name + " is a little princess and is therefore in another castle.");
+    return;
+  }
+  players = tempPlayers;
+  numPlayers--;
+
+  console.log(name + " has ***left***.");
+  console.log("That makes " + numPlayers + " players.\n\n")
 };
 
 function newGame(name) {
-    if (preparing) {
-        console.log ("Error: You're already creating a new game, shithead.");
-        return;
-    }
-    console.log("***" + name + "*** has started a new game of Werewolf.\nTo play, type ***!join***\n\nOnce everyone is in, ***" + name + "*** can type ***!start*** to begin the game");
-    preparing = true;
+  if (preparing) {
+    console.log("Error: You're already creating a new game, shithead.");
+    return;
+  }
+  console.log("***" + name + "*** has started a new game of Werewolf.\nTo play, type ***!join***\n\nOnce everyone is in, ***" + name + "*** can type ***!start*** to begin the game");
+  preparing = true;
 
-    resetVars();
-    players[0] = name;
-    numPlayers = 1;
+  resetVars();
+  players[0] = name;
+  numPlayers = 1;
 };
 
 function startGame(name) {
-    if (!preparing) {
-        console.log("Error: Sorry, dog. No game is happening right now :(");
-        return;
-    }
-    if (playing) {
-        console.log("Error: Can't start what's started, so don't get started with me.");
-        return;
-    }
-    if (name != players[0]) {
-        console.log("Error: You is no leader.");
-        return;
-    }
-    if (numPlayers < minPlayers) {
-        console.log("Error: You're a loser with no friends.");
-        return;
-    }
-    preparing = false;
-    playing = true;
+  if (!preparing) {
+    console.log("Error: Sorry, dog. No game is happening right now :(");
+    return;
+  }
+  if (playing) {
+    console.log("Error: Can't start what's started, so don't get started with me.");
+    return;
+  }
+  if (name != players[0]) {
+    console.log("Error: You is no leader.");
+    return;
+  }
+  if (numPlayers < minPlayers) {
+    console.log("Error: You're a loser with no friends.");
+    return;
+  }
+  preparing = false;
+  playing = true;
 
-    if (numPlayers >= 14)
-        numWerewolves = 3;
+  if (numPlayers >= 14)
+    numWerewolves = 3;
 
-    var rolePlayerNames = [];
-    var rolePlayerNumbers = [];
-    var numRoles = 2 + numWerewolves;
+  var rolePlayerNames = [];
+  var rolePlayerNumbers = [];
+  var numRoles = 2 + numWerewolves;
 
-    rolePlayerNames = getRandom(players, numRoles);
-    for (var i = 0; i < numRoles; i++) {
-        for (var j = 0; j < numPlayers; j++) {
-            if (players[j] == rolePlayerNames[i]) {
-                rolePlayerNumbers[i] = j;
-            }
-        }
+  rolePlayerNames = getRandom(players, numRoles);
+  for (var i = 0; i < numRoles; i++) {
+    for (var j = 0; j < numPlayers; j++) {
+      if (players[j] == rolePlayerNames[i]) {
+        rolePlayerNumbers[i] = j;
+      }
     }
+  }
 
-    seer = rolePlayerNumbers[0];
-    doctor = rolePlayerNumbers[1];
-    for (var i = 0; i < numWerewolves; i++)
-        werewolves[i] = rolePlayerNumbers[i + 2];
-        
-    console.log(players[seer] + " is the Seer.");
-    console.log(players[doctor] + " is the Doctor.");
+  seer = rolePlayerNumbers[0];
+  doctor = rolePlayerNumbers[1];
+  for (var i = 0; i < numWerewolves; i++)
+    werewolves[i] = rolePlayerNumbers[i + 2];
+
+  console.log(players[seer] + " is the Seer.");
+  console.log(players[doctor] + " is the Doctor.");
 };
 
 function killFolks(player, target) {
-    var found = false;
-    for (var i = 0; i < numWerewolves; i++){
-        if (werewolves[i] == player) {
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        console.log("Error: You ain't no wulf.");
-        return;
-    }
-    if (whoVoted[player] == true) {
-        console.log("Error: You no good, lilly-livered, dog-trash, sister-fucking, foul-smelling piece of shit. You already voted.");
-        return;
-    }
-    votes[voted] = target;
-    voted++;
-    if (voted == numWerewolves) {
-        return (sacrifice());
-    }
-    return null;
+  // console.log(`player ${player} and target ${target}`);
+  // var found = false;
+  // for (var i = 0; i < numWerewolves; i++) {
+  //   if (werewolves[i] == player) {
+  //     found = true;
+  //     break;
+  //   }
+  // }
+  // if (!found) {
+  //   console.log("Error: You ain't no wulf.");
+  //   return;
+  // }
+  // /*if (whoVoted[player] == true) {
+  //   console.log("Error: You no good, lilly-livered, dog-trash, sister-fucking, foul-smelling piece of shit. You already voted.");
+  //   return;
+  // }*/
+  votes[voted] = target;
+  voted++;
+  if (voted == numWerewolves) {
+    console.log(`going to sacrifice function..`);
+    return (sacrifice());
+  }
+  console.log(`returning null`);
+  return null;
 };
 
 function sacrifice() {
-    var pickedPlayers = [];
-    var pickedTimes = [];
-    var numPicked = 0;
-    var highestVotes = 0;
-    var highestPlayer = "";
-    for (var i = 0; i < voted; i++) {
-        if (i == 0) {
-            pickedPlayers[numPicked] = votes[i];
-            pickedTimes[numPicked]++;
-            numPicked++;
-        }
-        else {
-            var found = false;
-            for (var j = 0; j < numPicked; j++) {
-                if (pickPlayers[j] == votes[i]) {
-                    pickedTimes[j]++;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                pickedPlayers[numPicked] = votes[i];
-                pickedTimes[numPicked]++;
-                numPicked++;
-            }
-        }
+  var pickedPlayers = [];
+  var pickedTimes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var numPicked = 0;
+  var highestVotes = 0;
+  var highestPlayer = "";
+  for (var i = 0; i < voted; i++) {
+    if (i == 0) {
+      pickedPlayers[numPicked] = votes[i];
+      pickedTimes[numPicked]++;
+      numPicked++;
     }
-    for (var i = 0; i < numPicked; i++) {
-        if (pickedTimes[i] > highestVotes) {
-            highestVotes = pickedTimes[i];
-            highestPlayer = i;
+    else {
+      var found = false;
+      for (var j = 0; j < numPicked; j++) {
+        if (pickedPlayers[j] == votes[i]) {
+          pickedTimes[j]++;
+          found = true;
+          break;
         }
-        else if (pickedTimes[i] == highestVotes) {
-            // Flip a coin. If it's heads, we got a new winner.
-            var who2pick = Math.floor(Math.random()*2);
-            if (who2pick == 0) {
-                highestVotes = pickedTimes[i];
-                highestPlayer = i;
-            }
-        }
+      }
+      if (!found) {
+        pickedPlayers[numPicked] = votes[i];
+        pickedTimes[numPicked]++;
+        numPicked++;
+      }
     }
-    votes = [];
-    voted = 0;
-    dying = pickedPlayers[highestPlayer];
-    phase++;
-    return pickedPlayers[highestPlayer];
+  }
+  for (var i = 0; i < numPicked; i++) {
+    if (pickedTimes[i] > highestVotes) {
+      highestVotes = pickedTimes[i];
+      highestPlayer = i;
+    }
+    else if (pickedTimes[i] == highestVotes) {
+      // Flip a coin. If it's heads, we got a new winner.
+      var who2pick = Math.floor(Math.random() * 2);
+      if (who2pick == 0) {
+        highestVotes = pickedTimes[i];
+        highestPlayer = i;
+      }
+    }
+  }
+  votes = [];
+  voted = 0;
+  dying = pickedPlayers[highestPlayer];
+  phase++;
+  console.log(`dying is ${dying}`);
+  return pickedPlayers[highestPlayer];
 };
 
 function inspectaDeck(seer, target) {
-    var found = false;
-    var whatThey;
-    if (target == doctor) {
-        console.log(players[seer] + ": " + players[target] + " is the doctor.");
+  var found = false;
+  var whatThey;
+  if (target == doctor) {
+    console.log(players[seer] + ": " + players[target] + " is the doctor.");
+    found = true;
+    whatThey = 1;
+  }
+  else {
+    for (var i = 0; i < numWerewolves; i++) {
+      if (werewolves[i] == target) {
+        console.log(players[seer] + ": " + players[target] + " is a werewolf.");
         found = true;
-        whatThey = 1;
+        whatThey = 0;
+        break;
+      }
     }
-    else {
-        for (var i = 0; i < numWerewolves; i++) {
-            if (werewolves[i] == target) {
-                console.log(players[seer] + ": " + players[target] + " is a werewolf.");
-                found = true;
-                whatThey = 0;
-                break;
-            }
-        }
-    }
-    if (!found) {
-        console.log(players[seer] + ": " + players[target] + " is a villager.");
-        whatThey = 2;
-    }
-    phase++;
-    return whatThey;
+  }
+  if (!found) {
+    console.log(players[seer] + ": " + players[target] + " is a villager.");
+    whatThey = 2;
+  }
+  phase++;
+  return whatThey;
 };
 
-function doctor(doctor, target) {
-    healing = target;
-    phase++;
+function heal(target) {
+  healing = target;
+  if (healing != dying){
+    killed = players[dying];
+    removePlayer(players[dying]);
+  }
+  phase++;
 };
 
-function vote(player) {
-    votes[voted] = target;
-    voted++;
-    if (voted == numPlayers) {
-        return(sacrificeIITurboHDRemix());
-    }
-    return null;
+function vote(target) {
+  votes[voted] = target;
+  voted++;
+  if (voted == numPlayers) {
+    return (sacrificeIITurboHDRemix());
+  }
+  return null;
 };
 
 function sacrificeIITurboHDRemix() {
-    var pickedPlayers = [];
-    var pickedTimes = [];
-    var numPicked = 0;
-    var highestVotes = 0;
-    var highestPlayer = "";
-    var youAWolf = false;
-    for (var i = 0; i < voted; i++) {
-        if (i == 0) {
-            pickedPlayers[numPicked] = votes[i];
-            pickedTimes[numPicked]++;
-            numPicked++;
-        }
-        else {
-            var found = false;
-            for (var j = 0; j < numPicked; j++) {
-                if (pickPlayers[j] == votes[i]) {
-                    pickedTimes[j]++;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                pickedPlayers[numPicked] = votes[i];
-                pickedTimes[numPicked]++;
-                numPicked++;
-            }
-        }
+  var pickedPlayers = [];
+  var pickedTimes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var numPicked = 0;
+  var highestVotes = 0;
+  var highestPlayer = "";
+  var youAWolf = false;
+  for (var i = 0; i < voted; i++) {
+    if (i == 0) {
+      pickedPlayers[numPicked] = votes[i];
+      pickedTimes[numPicked]++;
+      numPicked++;
     }
-    var tied = false;
-    for (var i = 0; i < numPicked; i++) {
-        if (pickedTimes[i] > highestVotes) {
-            highestVotes = pickedTimes[i];
-            highestPlayer = i;
-            tied = false;
+    else {
+      var found = false;
+      for (var j = 0; j < numPicked; j++) {
+        if (pickedPlayers[j] == votes[i]) {
+          pickedTimes[j]++;
+          found = true;
+          break;
         }
-        else if (pickedTimes[i] == highestVotes) {
-            // Flip a coin. If it's heads, we got a new winner.
-            tie = true;
-            var who2pick = Math.floor(Math.random()*2);
-            if (who2pick == 0) {
-                highestVotes = pickedTimes[i];
-                highestPlayer = i;
-            }
-        }
+      }
+      if (!found) {
+        pickedPlayers[numPicked] = votes[i];
+        pickedTimes[numPicked]++;
+        numPicked++;
+      }
     }
-    if (tied) {
-        console.log("Looks like nobody dies today. Good luck tonight!")
-        votes = [];
-        voted = 0;
-        dying = null;
-        healing = null;
-        phase = 0;
-        return null;
+  }
+  var tied = false;
+  for (var i = 0; i < numPicked; i++) {
+    if (pickedTimes[i] > highestVotes) {
+      highestVotes = pickedTimes[i];
+      highestPlayer = i;
+      tied = false;
     }
-
-    //This only happens if there's no tie
-    dying = pickedPlayers[highestPlayer];
-    var found = false;
-    for (var i = 0; i < numWerewolves; i++) {
-        if (werewolves[i] == dying) {
-            killWolf(i);
-            found = true;
-            console.log("Good job! " + players[dying] + " was a werewolf.");
-            youAWolf = true;
-            break;
-        }
+    else if (pickedTimes[i] == highestVotes) {
+      // Flip a coin. If it's heads, we got a new winner.
+      tie = true;
+      var who2pick = Math.floor(Math.random() * 2);
+      if (who2pick == 0) {
+        highestVotes = pickedTimes[i];
+        highestPlayer = i;
+      }
     }
-    if (!found)
-        console.log("Big oof! " + players[dying] + " is not a werewolf.");
-
-    removePlayer(players[dying]);
-
-    if (numWerewolves >= (numPlayers - numWerewolves)) {
-        console.log("Well everyone, you tried your best, but it just wasn't good enough.\n**Werewolves win...**");
-        endGame();
-        return;
-    } 
-    else if (numWerewolves == 0) {
-        console.log("Fuck you, werewolves!!!!!\n**Villagers win!**");
-        endGame();
-        return;
-    }
-    
+  }
+  if (tied) {
+    console.log("Looks like nobody dies today. Good luck tonight!")
     votes = [];
     voted = 0;
     dying = null;
     healing = null;
     phase = 0;
-    return youAWolf;
+    return null;
+  }
+
+  //This only happens if there's no tie
+  dying = pickedPlayers[highestPlayer];
+  var found = false;
+  for (var i = 0; i < numWerewolves; i++) {
+    if (werewolves[i] == dying) {
+      killWolf(i);
+      found = true;
+      console.log("Good job! " + players[dying] + " was a werewolf.");
+      youAWolf = true;
+      break;
+    }
+  }
+  if (!found)
+    console.log("Big oof! " + players[dying] + " is not a werewolf.");
+
+  removePlayer(players[dying]);
+
+  if (numWerewolves >= (numPlayers - numWerewolves)) {
+    console.log("Well everyone, you tried your best, but it just wasn't good enough.\n**Werewolves win...**");
+    endGame();
+    return;
+  }
+  else if (numWerewolves == 0) {
+    console.log("Fuck you, werewolves!!!!!\n**Villagers win!**");
+    endGame();
+    return;
+  }
+
+  votes = [];
+  voted = 0;
+  dying = null;
+  healing = null;
+  phase = 0;
+  return youAWolf;
 };
 
 function killWolf(index) {
-    for (var i = index; i < numWerewolves; i++) {
-        if (i == (numWerewolves - 1)) {
-            werewolves[i] = null;
-        }
-        else
-            werewolves[i] = werewolves[i + 1];
+  for (var i = index; i < numWerewolves; i++) {
+    if (i == (numWerewolves - 1)) {
+      werewolves[i] = null;
     }
-    numWerewolves--;
+    else
+      werewolves[i] = werewolves[i + 1];
+  }
+  numWerewolves--;
 };
 
 function skipDay() {
-    console.log(players[0] + " skipped the vote, so good luck!");
-    
-    votes = [];
-    voted = 0;
-    dying = null;
-    healing = null;
-    phase = 0;
+  console.log(players[0] + " skipped the vote, so good luck!");
+
+  votes = [];
+  voted = 0;
+  dying = null;
+  healing = null;
+  phase = 0;
 };
 
 function endGame() {
-    preparing = false;
-    playing = false;
+  preparing = false;
+  playing = false;
 };
 
 function testGame() {
-    newGame("P McGee");
-    for (var i = 0; i < 7; i++) {
-        addPlayer("P " + (i + 2));
-    }
+  newGame("P McGee");
+  for (var i = 0; i < 7; i++) {
+    addPlayer("P " + (i + 2));
+  }
 };
