@@ -27,15 +27,15 @@ client.on("message", async message => {
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
-  /////////////////////////////MEMES
-  // if(command === "chair"){
-  //   message.channel.send(`Hmmm, what about this one: ${chairs[Math.floor(Math.random() * chairs.length)]} ${message.author}?`)
-  // }
+  ///////////////////////////MEMES
+  if(command === "chair"){
+    message.channel.send(`Hmmm, what about this one: ${chairs[Math.floor(Math.random() * chairs.length)]} ${message.author}?`)
+  }
 
-  // if(command === "leapday"){
-  //   message.channel.send(`Leap day is February 29th ${message.author} :thinking:`);
-  // }
-  ////////////////////////////!MEMES
+  if(command === "leapday"){
+    message.channel.send(`Leap day is February 29th ${message.author} :thinking:`);
+  }
+  //////////////////////////!MEMES
 
   /* Ping Command */
   if (command === "ping") {
@@ -316,7 +316,7 @@ client.on("message", async message => {
         try {
           if (players[args-1] != 'undefined') {
             heal(args-1);
-            message.channel.send(`You set out to heal ${(await client.users.fetch(players[args-1])).username} tonight, let's see how it goes!`);
+            message.channel.send(`You set out to heal ${(await client.users.fetch(healingId)).username} tonight, let's see how it goes!`);
           }
           else {
             message.channel.send(`It looks like your argument was invalid, please select a # from the list above.`);
@@ -334,9 +334,10 @@ client.on("message", async message => {
     doctorNotified = false;
 
     //Alert the masses who dieddd
-    console.log(`morning phase, dying is ${(await client.users.fetch(dyingId).username)}`);
-    messageMainChannel(`Everybody wake up. ${(await client.users.fetch(dyingId).username)} was mutilated in their sleep!`);
-    if (dyingId == player[healing]) {
+    var nameOfKilled = (await client.users.fetch(dyingId)).username;
+    console.log(`morning phase, dying is ${nameOfKilled}`);
+    messageMainChannel(`Everybody wake up. ${nameOfKilled} was mutilated in their sleep!`);
+    if (dyingId == players[healing]) {
       messageMainChannel(`... but luckily the doctor patched em up, so no life lost!`);
     }
 
@@ -365,34 +366,36 @@ client.on("message", async message => {
 
   if (phase === 3 & playing & morningNotified & mainChannelId === message.channel.id) {
     if (command === "vote") {
-      if (!playersWhoVoted.includes(message.author.id)) {
-        if (players[args-1] != 'undefined') {
-          var sacrificeTime = vote(args - 1);
-          messageMainChannel(`${message.author} has voted to lynch ${(await client.users.fetch(players[args-1])).username}!`);
-          playersWhoVoted.push[message.author.id];
-          if (sacrificeTime != null) {
-            console.log(`entering sacrifice time`);
-            if (ret === -1) {
-              messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
-            }
-            if (ret === true) {
-              messageMainChannel(`Looks like ${(await client.users.fetch(dyingId)).username} was a werewolf! Nice!`);
-            }
-            //end game state
-            if (ret === 1) {
-              messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
-              resetVars();
-            }
-            //end game state
-            else if (ret === 2) {
-              messageMainChannel(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
-              resetVars();
+      if(players.includes(message.author.id)){
+        if (!playersWhoVoted.includes(message.author.id)) {
+          if (players[args-1] != 'undefined') {
+            var sacrificeTime = vote(args - 1);
+            messageMainChannel(`${message.author} has voted to lynch ${(await client.users.fetch(players[args-1])).username}! That's ${voted} out of ${players.length}`);
+            playersWhoVoted.push[message.author.id];
+            if (sacrificeTime != null) {
+              console.log(`entering sacrifice time`);
+              if (sacrificeTime === -1) {
+                messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
+              }
+              if (sacrificeTime === true) {
+                messageMainChannel(`Looks like ${(await client.users.fetch(dyingId)).username} was a werewolf! Nice!`);
+              }
+              //end game state
+              if (sacrificeTime === 1) {
+                messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
+                resetVars();
+              }
+              //end game state
+              else if (sacrificeTime === 2) {
+                messageMainChannel(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
+                resetVars();
+              }
             }
           }
         }
-      }
-      else {
-        messageMainChannel(`Hey ${message.author} you already voted!`);
+        else {
+          messageMainChannel(`Hey ${message.author} you already voted!`);
+        }
       }
     }
     if (command === "sleep" & players.indexOf(message.author.id) === 0) {
@@ -435,22 +438,22 @@ var morningNotified = false;
 var playersWhoVoted = [];
 var playersWhoVotedToKill = [];
 
-// var chairs = [
-//   `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020-stealth&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWTqq_fx-XKjgA6bhzize2-5s_GdqpifKt2Sy6VZgm2XQ_P8AhbokV4aAocwEALw_wcB`,
-//   `https://www.uline.ca/Product/Detail/H-6238/Office-Chairs/All-Mesh-Task-Chair?pricode=YE963&gadtype=pla&id=H-6238&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWThPufhQbT5mXbrrs_tacwRckdBQe-ODaE9-K2vbJWY4XUpnOEUFmYaAoWiEALw_wcB&gclsrc=aw.ds`,
-//   `https://www.wayfair.ca/Astoria-Grand--Pridemore-Executive-Chair-QOFY2117-L10-K~PNEX1006.html?refid=GX311258840124-PNEX1006_36834961&device=c&ptid=649949315489&targetid=pla-649949315489&network=g&ireid=85639976&PiID%5B%5D=36834961&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWQzK3qMqJSOrYIiKD7F0uyJiaPqzmEnF6vXoa2fCTmKTs2CvBO4UI4aAtt3EALw_wcB`,
-//   `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020_softweave-cookies_and_cream&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWRcza7MQ3_FlwKGptBKHyNJMyTl_BIeKVG8LOOGEXR9ACavoTQwRcYaAhbSEALw_wcB`,
-//   `https://www.wayfair.ca/Humanscale--Freedom-Executive-Chair-F213M-L10-K~C002538720.html?refid=GX381867373331-C002538720_915915054_915915057&device=c&ptid=847715690613&targetid=pla-847715690613&network=g&ireid=101795271&PiID%5B%5D=915915057&PiID%5B%5D=915915054&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWT_aTrSXghwEZBitvtwDXKSdZlYF9Xr_Wf56p-TOpHG9PEXQiWFM4YaAmu9EALw_wcB`,
-//   `https://www.wayfair.ca/Ebern-Designs--PC-and-Racing-Game-Chair-X113086327-L861-K~C002934008.html?refid=GX185650310553-C002934008&device=c&ptid=881637038879&targetid=aud-835011429296:pla-881637038879&network=g&ireid=110590688&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWQY9DwtbF8RjJ8Ctb-F0DhjvvB0LtLe4IVtt9vl8am5NUuE1FHspvUaAvvyEALw_wcB`,
-//   `https://www.ikea.com/ca/en/p/poaeng-armchair-black-brown-hillared-anthracite-s59306555/`,
-//   `https://www.staples.ca/products/394403-en-staples-mesh-task-chair-black`,
-//   `https://www.staples.ca/products/2888298-en-staples-hyken-technical-mesh-task-chair-red`,
-//   `https://www.staples.ca/products/2715730-en-staples-denaly-bonded-leather-big-tall-managers-chair-black-51468-ca`,
-//   `https://www.staples.ca/products/2896921-en-staples-racing-style-managers-chair-pink-53348-ca`,
-//   `https://www.staples.ca/products/2883935-en-staples-vartan-gaming-chair-red`,
-//   `https://www.staples.ca/products/2956057-en-anda-seat-e-series-gaming-chair-black`,
-//   `https://www.staples.ca/products/2883936-en-staples-vartan-gaming-chair-blue`
-// ];
+var chairs = [
+  `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020-stealth&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWTqq_fx-XKjgA6bhzize2-5s_GdqpifKt2Sy6VZgm2XQ_P8AhbokV4aAocwEALw_wcB`,
+  `https://www.uline.ca/Product/Detail/H-6238/Office-Chairs/All-Mesh-Task-Chair?pricode=YE963&gadtype=pla&id=H-6238&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWThPufhQbT5mXbrrs_tacwRckdBQe-ODaE9-K2vbJWY4XUpnOEUFmYaAoWiEALw_wcB&gclsrc=aw.ds`,
+  `https://www.wayfair.ca/Astoria-Grand--Pridemore-Executive-Chair-QOFY2117-L10-K~PNEX1006.html?refid=GX311258840124-PNEX1006_36834961&device=c&ptid=649949315489&targetid=pla-649949315489&network=g&ireid=85639976&PiID%5B%5D=36834961&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWQzK3qMqJSOrYIiKD7F0uyJiaPqzmEnF6vXoa2fCTmKTs2CvBO4UI4aAtt3EALw_wcB`,
+  `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020_softweave-cookies_and_cream&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWRcza7MQ3_FlwKGptBKHyNJMyTl_BIeKVG8LOOGEXR9ACavoTQwRcYaAhbSEALw_wcB`,
+  `https://www.wayfair.ca/Humanscale--Freedom-Executive-Chair-F213M-L10-K~C002538720.html?refid=GX381867373331-C002538720_915915054_915915057&device=c&ptid=847715690613&targetid=pla-847715690613&network=g&ireid=101795271&PiID%5B%5D=915915057&PiID%5B%5D=915915054&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWT_aTrSXghwEZBitvtwDXKSdZlYF9Xr_Wf56p-TOpHG9PEXQiWFM4YaAmu9EALw_wcB`,
+  `https://www.wayfair.ca/Ebern-Designs--PC-and-Racing-Game-Chair-X113086327-L861-K~C002934008.html?refid=GX185650310553-C002934008&device=c&ptid=881637038879&targetid=aud-835011429296:pla-881637038879&network=g&ireid=110590688&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWQY9DwtbF8RjJ8Ctb-F0DhjvvB0LtLe4IVtt9vl8am5NUuE1FHspvUaAvvyEALw_wcB`,
+  `https://www.ikea.com/ca/en/p/poaeng-armchair-black-brown-hillared-anthracite-s59306555/`,
+  `https://www.staples.ca/products/394403-en-staples-mesh-task-chair-black`,
+  `https://www.staples.ca/products/2888298-en-staples-hyken-technical-mesh-task-chair-red`,
+  `https://www.staples.ca/products/2715730-en-staples-denaly-bonded-leather-big-tall-managers-chair-black-51468-ca`,
+  `https://www.staples.ca/products/2896921-en-staples-racing-style-managers-chair-pink-53348-ca`,
+  `https://www.staples.ca/products/2883935-en-staples-vartan-gaming-chair-red`,
+  `https://www.staples.ca/products/2956057-en-anda-seat-e-series-gaming-chair-black`,
+  `https://www.staples.ca/products/2883936-en-staples-vartan-gaming-chair-blue`
+];
 
 client.login(config.token)
 
@@ -539,9 +542,21 @@ function removePlayer(name) {
   var tempPlayers = [];
   var found = false;
   for (var i = 0; i < numPlayers; i++) {
-    if (found)
+    if (found) {
       tempPlayers[i - 1] = players[i];
-
+      if (seer != null) {
+        if (i == seer)
+          seer = i - 1;
+        else if (i == doctor)
+          doctor = i - 1;
+        else {
+          for (var j = 0; j < numWerewolves; j++) {
+            if (werewolves[j] == i)
+              werewolves[j] = i - 1;
+          }
+        }
+      }
+    }
     else
       tempPlayers[i] = players[i];
 
@@ -723,6 +738,7 @@ function inspectaDeck(seer, target) {
 
 function heal(target) {
   healing = target;
+  healingId = players[healing];
   if (healing != dying){
     removePlayer(players[dying]);
   }
