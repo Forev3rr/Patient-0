@@ -27,16 +27,6 @@ client.on("message", async message => {
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
-  ///////////////////////////MEMES
-  if(command === "chair"){
-    message.channel.send(`Hmmm, what about this one: ${chairs[Math.floor(Math.random() * chairs.length)]} ${message.author}?`)
-  }
-
-  if(command === "leapday"){
-    message.channel.send(`Leap day is February 29th ${message.author} :thinking:`);
-  }
-  //////////////////////////!MEMES
-
   /* Ping Command */
   if (command === "ping") {
     const response = await message.channel.send("Ping?");
@@ -437,23 +427,6 @@ var werewolvesNotified = false;
 var morningNotified = false;
 var playersWhoVoted = [];
 var playersWhoVotedToKill = [];
-
-var chairs = [
-  `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020-stealth&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWTqq_fx-XKjgA6bhzize2-5s_GdqpifKt2Sy6VZgm2XQ_P8AhbokV4aAocwEALw_wcB`,
-  `https://www.uline.ca/Product/Detail/H-6238/Office-Chairs/All-Mesh-Task-Chair?pricode=YE963&gadtype=pla&id=H-6238&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWThPufhQbT5mXbrrs_tacwRckdBQe-ODaE9-K2vbJWY4XUpnOEUFmYaAoWiEALw_wcB&gclsrc=aw.ds`,
-  `https://www.wayfair.ca/Astoria-Grand--Pridemore-Executive-Chair-QOFY2117-L10-K~PNEX1006.html?refid=GX311258840124-PNEX1006_36834961&device=c&ptid=649949315489&targetid=pla-649949315489&network=g&ireid=85639976&PiID%5B%5D=36834961&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWQzK3qMqJSOrYIiKD7F0uyJiaPqzmEnF6vXoa2fCTmKTs2CvBO4UI4aAtt3EALw_wcB`,
-  `https://secretlabchairs.ca/collections/omega-series?utm_source=google&utm_campaign=ca-google-shop&utm_medium=cpc&utm_content=datafeed#omega_2020_softweave-cookies_and_cream&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWRcza7MQ3_FlwKGptBKHyNJMyTl_BIeKVG8LOOGEXR9ACavoTQwRcYaAhbSEALw_wcB`,
-  `https://www.wayfair.ca/Humanscale--Freedom-Executive-Chair-F213M-L10-K~C002538720.html?refid=GX381867373331-C002538720_915915054_915915057&device=c&ptid=847715690613&targetid=pla-847715690613&network=g&ireid=101795271&PiID%5B%5D=915915057&PiID%5B%5D=915915054&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWT_aTrSXghwEZBitvtwDXKSdZlYF9Xr_Wf56p-TOpHG9PEXQiWFM4YaAmu9EALw_wcB`,
-  `https://www.wayfair.ca/Ebern-Designs--PC-and-Racing-Game-Chair-X113086327-L861-K~C002934008.html?refid=GX185650310553-C002934008&device=c&ptid=881637038879&targetid=aud-835011429296:pla-881637038879&network=g&ireid=110590688&gclid=Cj0KCQjw4dr0BRCxARIsAKUNjWQY9DwtbF8RjJ8Ctb-F0DhjvvB0LtLe4IVtt9vl8am5NUuE1FHspvUaAvvyEALw_wcB`,
-  `https://www.ikea.com/ca/en/p/poaeng-armchair-black-brown-hillared-anthracite-s59306555/`,
-  `https://www.staples.ca/products/394403-en-staples-mesh-task-chair-black`,
-  `https://www.staples.ca/products/2888298-en-staples-hyken-technical-mesh-task-chair-red`,
-  `https://www.staples.ca/products/2715730-en-staples-denaly-bonded-leather-big-tall-managers-chair-black-51468-ca`,
-  `https://www.staples.ca/products/2896921-en-staples-racing-style-managers-chair-pink-53348-ca`,
-  `https://www.staples.ca/products/2883935-en-staples-vartan-gaming-chair-red`,
-  `https://www.staples.ca/products/2956057-en-anda-seat-e-series-gaming-chair-black`,
-  `https://www.staples.ca/products/2883936-en-staples-vartan-gaming-chair-blue`
-];
 
 client.login(config.token)
 
