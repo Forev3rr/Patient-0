@@ -10,6 +10,9 @@ const config = require("./config.json");
 //Channel the game is being played in
 var mainChannelId;
 
+//Leader of this session
+var hostId;
+
 //After this all the bot will respond to messages
 client.on('ready', () => {
   console.log("Connected as " + client.user.tag)
@@ -45,6 +48,7 @@ client.on("message", async message => {
     }
 
     message.channel.send(`${message.author} wants to start a game of Werewolf! To join please type **${config.prefix}join**`);
+    hostId = message.author.id;
     mainChannelId = message.channel.id;
     newGame(message.author.id);
   };
@@ -145,6 +149,19 @@ client.on("message", async message => {
     message.channel.send(players.indexOf(message.author.id));
   }
 
+  if (command === "_testmainchannelmessage"){
+    messageMainChannel("~testing~");
+  }
+
+  // if(command === "_test2"){
+  //   if(message.member.voice.channel){
+  //     let channel = message.member.voice.channel;
+  //     for(let member of channel.members){
+  //       member[1].setMute(true);
+  //     }
+  //   }
+  // }
+
   /* Non-command centric messages */
 
   /* Werewolf Phase */
@@ -153,7 +170,7 @@ client.on("message", async message => {
     morningNotified = false;
 
     //Message the channel
-    messageMainChannel(`Everyone, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe night is upon us and the werewolves are about to choose their first target.\n *We're hoping it's not you too!*`);
+    messageMainChannel(`**Everyone**, pretend you're closing your eyes and slapping a bag of soil to cover up any noise.\nThe **night** is upon us and the werewolves are about to choose their first target. :fork_and_knife:\n*We're hoping it's not you too!*`);
 
     //Message the Werwolves
     messageWereWolves(`You are a werewolf :wolf: :full_moon:! Get ready to **!kill** some b- ... uh.. I mean villagers.`);
@@ -326,7 +343,7 @@ client.on("message", async message => {
     //Alert the masses who dieddd
     var nameOfKilled = (await client.users.fetch(dyingId)).username;
     console.log(`morning phase, dying is ${nameOfKilled}`);
-    messageMainChannel(`Everybody wake up. ${nameOfKilled} was mutilated in their sleep!`);
+    messageMainChannel(`Everybody... **WAKE UP!**.\n${nameOfKilled} was *mutilated* in their sleep! :scream:`);
     if (dyingId == players[healing]) {
       messageMainChannel(`... but luckily the doctor patched em up, so no life lost!`);
     }
@@ -339,10 +356,11 @@ client.on("message", async message => {
     }
 
     //okay if werewolves didn't win lets talk about lynching
-    var msg1 = `Talk amongst yourselves and try to figure out *who* among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n`;
+    var msg1 = `Talk amongst yourselves and try to figure out **who** among you is not who they say!\n If you think you know who is a werewolf, you may vote to kill a player from the list below by typing **!vote** ***x***:\n`;
     for (let i = 0; i < numPlayers; i++) {
       msg1 = msg1.concat(`\n ${i + 1}. ${(await client.users.fetch(players[i])).username}`);
     }
+    msg1 = msg1.concat(`\n`);
     msg1 = msg1.concat(`\n`);
     msg1 = msg1.concat(`If you aren't sure who could be a filthy, no good, two-timing werewolf, ${(await client.users.fetch(players[0])).username} can type !sleep to move to night time.`)
     messageMainChannel(msg1);
@@ -360,25 +378,25 @@ client.on("message", async message => {
         if (!playersWhoVoted.includes(message.author.id)) {
           if (players[args-1] != 'undefined') {
             messageMainChannel(`${message.author} has voted to lynch ${(await client.users.fetch(players[args-1])).username}! That's ${voted} out of ${players.length}`);
-            var sacrificeTime = vote(args - 1);
             playersWhoVoted.push[message.author.id];
+            var sacrificeTime = vote(args - 1);
             if (sacrificeTime != null) {
               console.log(`entering sacrifice time`);
               if (sacrificeTime === -1) {
-                messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
+                messageMainChannel(`Looks like nobody dies today... let's see how that plays out..`);
               }
               if (sacrificeTime === true) {
                 //messageMainChannel(`Looks like ${(await client.users.fetch(dyingId)).username} was a werewolf! Nice!`);
-                messageMainChannel(`Looks like they were a werewolf! Nice!`);
+                messageMainChannel(`Looks like the lynched was a no good werewolf! Good job villagers!!\n`);
               }
               //end game state
               if (sacrificeTime === 1) {
-                messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough. Werewolves win...`);
+                messageMainChannel(`Well everyone, you tried your best, but it just wasn't good enough.\n\n\n **Werewolves** win... :wolf::wolf::wolf:`);
                 resetVars();
               }
               //end game state
               else if (sacrificeTime === 2) {
-                messageMainChannel(`Fuck you, werewolves!!!!!\n**Villagers win!**`);
+                messageMainChannel(`Suck it werewolves!\n**Villagers** win! :person_tipping_hand:`);
                 resetVars();
               }
             }
@@ -420,6 +438,8 @@ client.on("message", async message => {
   //   }
   //   return playersReturn;
   // }
+  
+
 });
 
 var seerNotified = false;
