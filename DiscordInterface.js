@@ -359,8 +359,8 @@ client.on("message", async message => {
       if(players.includes(message.author.id)){
         if (!playersWhoVoted.includes(message.author.id)) {
           if (players[args-1] != 'undefined') {
-            var sacrificeTime = vote(args - 1);
             messageMainChannel(`${message.author} has voted to lynch ${(await client.users.fetch(players[args-1])).username}! That's ${voted} out of ${players.length}`);
+            var sacrificeTime = vote(args - 1);
             playersWhoVoted.push[message.author.id];
             if (sacrificeTime != null) {
               console.log(`entering sacrifice time`);
@@ -368,7 +368,8 @@ client.on("message", async message => {
                 messageMainChannel(`Looks like nobody dies today. Good luck tonight!`);
               }
               if (sacrificeTime === true) {
-                messageMainChannel(`Looks like ${(await client.users.fetch(dyingId)).username} was a werewolf! Nice!`);
+                //messageMainChannel(`Looks like ${(await client.users.fetch(dyingId)).username} was a werewolf! Nice!`);
+                messageMainChannel(`Looks like they were a werewolf! Nice!`);
               }
               //end game state
               if (sacrificeTime === 1) {
